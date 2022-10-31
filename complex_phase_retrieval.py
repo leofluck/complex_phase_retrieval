@@ -146,7 +146,7 @@ def initialize(N, d, eta, tau, b, m_0, iter_max, isComplex):
     #eta must be smaller than tau
     #b must be bigger than eta/(tau+eta)
 
-    assert eta <= tau, "eta must be bigger than tau"
+    assert eta <= tau, "eta must be smaller than tau"
     assert (b >= eta/(tau+eta)), "b must be bigger than eta/(tau+eta)"
 
     if isComplex:
@@ -230,15 +230,15 @@ def main_simple():
     plot_magLoss_iter(m_norm_all, loss_all, iter_max)
 
 def main_comparaison_methods():
-    N = 30
-    d = 10
-    eta = 0.01 # eta must be smaller than tau
+    N = 300
+    d = 100
+    eta = 1 # eta must be smaller than tau
     b = np.array([1., 0.5, 0.5])
     tau = np.array([1., eta/0.5, 1.]) # b must be bigger than eta/(tau+eta)
     m_0 = 0.2
     iter_max = 1e3
     isComplex = False
-    np_rd_seed = np.arange(0,5,1) # for the results to be reproductible
+    np_rd_seed = np.arange(0,1,1) # for the results to be reproductible
 
     graph_labels = ['GD','SGD','p-SGD']
 
@@ -259,6 +259,7 @@ def main_comparaison_methods():
     #loss_graph = data_graph[3:6]
 
     plot_descent_methods(m_graph, loss_graph, graph_labels, int(iter_max))
+    print(f'N = {N}\nd = {d}\neta = {eta}\nb = {b}\ntau = {tau}\nm_0 = {m_0}\niter_max = {iter_max}\nisComplex = {isComplex}\nnb_samples_averaged = {len(np_rd_seed)}')
 
 if __name__ == "__main__":
     main_comparaison_methods()
