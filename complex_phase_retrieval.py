@@ -230,8 +230,8 @@ def main_simple():
     plot_magLoss_iter(m_norm_all, loss_all, iter_max)
 
 def main_comparaison_methods():
-    N = 300
-    d = 100
+    N = 600
+    d = 200
     eta = 1 # eta must be smaller than tau
     b = np.array([1., 0.5, 0.5])
     tau = np.array([1., eta/0.5, 1.]) # b must be bigger than eta/(tau+eta)
@@ -243,6 +243,8 @@ def main_comparaison_methods():
     graph_labels = ['GD','SGD','p-SGD']
 
     m_graph, loss_graph = np.empty((3,int(iter_max))), np.empty((3,int(iter_max)))
+
+    print(f'N = {N}\nd = {d}\neta = {eta}\nb = {b}\ntau = {tau}\nm_0 = {m_0}\niter_max = {iter_max}\nisComplex = {isComplex}\nnb_samples_averaged = {len(np_rd_seed)}')
 
     for descent_type in range(3): # for each descent type, 500 different loops are taken over the narray np_rd_seed
         m_to_average, loss_to_average = np.empty((len(np_rd_seed),int(iter_max))), np.empty((len(np_rd_seed),int(iter_max)))
@@ -258,8 +260,31 @@ def main_comparaison_methods():
     #m_graph = data_graph[0:3]
     #loss_graph = data_graph[3:6]
 
-    plot_descent_methods(m_graph, loss_graph, graph_labels, int(iter_max))
-    print(f'N = {N}\nd = {d}\neta = {eta}\nb = {b}\ntau = {tau}\nm_0 = {m_0}\niter_max = {iter_max}\nisComplex = {isComplex}\nnb_samples_averaged = {len(np_rd_seed)}')
+    data_graph_d100 = np.genfromtxt('methods_comparaison_d100.csv')
+    m_graph_d100 = data_graph_d100[0:3]
+    loss_graph_d100 = data_graph_d100[3:6]
+    graph_labels_d100 = ['GD d100', 'SGD d100', 'p-SGD d100']
+
+    plot_descent_methods(np.concatenate((m_graph,m_graph_d100)), np.concatenate((loss_graph,loss_graph_d100)), graph_labels+graph_labels_d100, int(iter_max))
+
+    #plot_descent_methods(m_graph, loss_graph, graph_labels, int(iter_max))
+
+def main_to_plot():
+    data_graph_d100 = np.genfromtxt('methods_comparaison_d100.csv')
+    m_graph_d100 = data_graph_d100[0:3]
+    loss_graph_d100 = data_graph_d100[3:6]
+    graph_labels_d100 = ['GD d100', 'SGD d100', 'p-SGD d100']
+
+    data_graph = np.genfromtxt('methods_comparaison.csv')
+    m_graph = data_graph[0:3]
+    loss_graph = data_graph[3:6]
+    graph_labels = ['GD', 'SGD', 'p-SGD']
+    
+    iter_max = 1e3
+
+    plot_descent_methods(np.concatenate((m_graph,m_graph_d100)), np.concatenate((loss_graph,loss_graph_d100)), graph_labels+graph_labels_d100, int(iter_max))
+
 
 if __name__ == "__main__":
-    main_comparaison_methods()
+    #main_comparaison_methods()
+    main_to_plot()
