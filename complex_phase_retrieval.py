@@ -75,7 +75,7 @@ def cost_der_1(h,h_0):
     """
     The derivative of the cost function "mu" in its first argument, h
     """
-    return 2*(np.abs(h)**2-np.abs(h_0)**2)*h
+    return (np.abs(h)**2-np.abs(h_0)**2)*h
 
 def isinbatch(b,n):
     """
@@ -127,11 +127,11 @@ def define_w_0(m_0, w_hat, complex=True):
         z = random_complex_vector(len(w_hat))
     else:
         z = random_complex_vector(len(w_hat),'real_gaussian',1)
-    coeff = np.sqrt(len(w_hat)*(1-m_0**2))/np.linalg.norm(z)
+    coeff = (-2*m_0*np.real(w_hat.T@np.conj(z)) + np.sqrt((2*m_0*np.real(w_hat.T@np.conj(z)))**2-z.T@np.conj(z)*len(w_hat)*(m_0**2-1)))/np.linalg.norm(z)**2
     vec = m_0*w_hat+coeff*z
     return vec/np.linalg.norm(vec)*np.sqrt(len(w_hat))
 
-def w_next(w,X,y,b,eta,tau,s_last):
+def w_next(w,X,y,b,eta,s_last):
     """
     The recursive algorithm that links all together
     """
@@ -174,11 +174,11 @@ def loop(N=100, d=30, eta=1, tau=10, b=0.1, m_0=0.2, iter_max=1e3, isComplex=Tru
     iter_max = int(iter_max)
     
     s_vector = isinbatch(b,N) #to "initialize" s, actually havine s for t=0
-    for iter in range(iter_max): #iteration is t
+    for iter in tqdm(range(iter_max)): #iteration is t
 
-        w = w_next(w,X,y,b,eta,tau,s_vector)
         m_norm_all[iter] = magnetization_norm(w,w_hat)
         loss_all[iter] = loss(w,X,y,s_vector,b)
+        w = w_next(w,X,y,b,eta,s_vector)
         s_vector = iterative_isinbatch(b,eta,tau,s_vector) #"useless" on the last run but this way allows the prior isinbatch to be called for t=0
 
     return m_norm_all, loss_all
@@ -187,19 +187,22 @@ def plot_magLoss_iter(m_norm_all,loss_all,iter_max):
 
     plt.subplot(1,2,1)
     plt.plot(np.arange(0,iter_max,1),m_norm_all)
-    plt.xlabel('t')
+    plt.xlabel('t$/\eta$')
     plt.ylabel('|m|(t)')
+    plt.xscale('log')
     plt.subplot(1,2,2)
     plt.plot(np.arange(0,iter_max,1),loss_all)
     plt.xlabel('t')
     plt.ylabel('$\mathcal{L}(t)$')
+    plt.xscale('log')
+    plt.yscale('log')
     plt.show()
 
 def plot_descent_methods(m_norm, loss, labels, iter_max): #the m_norm and loss must be narrays of dim (diff_graphs, values)
 
     plt.subplot(1,2,1)
     plt.plot(np.arange(0,iter_max,1).T,m_norm.T,)
-    plt.xlabel('t')
+    plt.xlabel('t/$\eta$')
     plt.ylabel('|m|(t)')
     plt.xscale('log')
     plt.legend(labels)
@@ -214,31 +217,40 @@ def plot_descent_methods(m_norm, loss, labels, iter_max): #the m_norm and loss m
 
 def main_simple():
 
-    N = 100
-    d = 30
-    eta = 1 # eta must be smaller than tau
-    b = 0.1
-    tau = 10 # b must be bigger than eta/(tau+eta)
+    N = 300
+    d = 100
+    eta = 0.5 # eta must be smaller than tau
+    b = 0.5
+    tau = 1 # b must be bigger than eta/(tau+eta)
     m_0 = 0.2
     iter_max = 1e3
-    isComplex = True
-    np_rd_seed = 0 # for the results to be reproductible
+    isComplex = False
+    np_rd_seed = None # for the results to be reproductible
 
 
     m_norm_all, loss_all = loop(N, d, eta, tau, b, m_0, iter_max, isComplex, np_rd_seed)
 
+    data_graph = np.concatenate((m_norm_all,loss_all))
+    np.savetxt("descent.csv", data_graph, fmt="%.6f")
+
+    data_graph_ = np.genfromtxt('descent.csv')
+    m_norm_all_ = data_graph[0:1]
+    loss_all_ = data_graph[1:2]
+    iter_max_ = len(m_norm_all)
+
     plot_magLoss_iter(m_norm_all, loss_all, iter_max)
 
 def main_comparaison_methods():
-    N = 600
-    d = 200
-    eta = 1 # eta must be smaller than tau
+    N = 300
+    d = 100
+    eta = 0.01 # eta must be smaller than tau
     b = np.array([1., 0.5, 0.5])
     tau = np.array([1., eta/0.5, 1.]) # b must be bigger than eta/(tau+eta)
     m_0 = 0.2
-    iter_max = 1e3
-    isComplex = False
-    np_rd_seed = np.arange(0,1,1) # for the results to be reproductible
+    iter_max = 1e4
+    isComplex = True
+    #np_rd_seed = np.arange(0,1,1) # for the results to be reproductible, the length of this object is the number of runs which get averaged
+    np_rd_seed = np.random.randint(0,1000,5)
 
     graph_labels = ['GD','SGD','p-SGD']
 
@@ -260,14 +272,22 @@ def main_comparaison_methods():
     #m_graph = data_graph[0:3]
     #loss_graph = data_graph[3:6]
 
-    data_graph_d100 = np.genfromtxt('methods_comparaison_d100.csv')
-    m_graph_d100 = data_graph_d100[0:3]
-    loss_graph_d100 = data_graph_d100[3:6]
-    graph_labels_d100 = ['GD d100', 'SGD d100', 'p-SGD d100']
+    #data_graph_d100 = np.genfromtxt('methods_comparaison_d100.csv')
+    #m_graph_d100 = data_graph_d100[0:3]
+    #loss_graph_d100 = data_graph_d100[3:6]
+    #graph_labels_d100 = ['GD d100', 'SGD d100', 'p-SGD d100']
 
-    plot_descent_methods(np.concatenate((m_graph,m_graph_d100)), np.concatenate((loss_graph,loss_graph_d100)), graph_labels+graph_labels_d100, int(iter_max))
+    #plot_descent_methods(np.concatenate((m_graph,m_graph_d100)), np.concatenate((loss_graph,loss_graph_d100)), graph_labels+graph_labels_d100, int(iter_max))
 
-    #plot_descent_methods(m_graph, loss_graph, graph_labels, int(iter_max))
+    plot_descent_methods(m_graph, loss_graph, graph_labels, int(iter_max))
+
+def main_plot_comparaison():
+    data_graph = np.genfromtxt('methods_comparaison.csv')
+    m_graph = data_graph[0:3]
+    loss_graph = data_graph[3:6]
+    iter_max = len(m_graph[0])
+    graph_labels = ['GD','SGD','p-SGD']
+    plot_descent_methods(m_graph, loss_graph, graph_labels, int(iter_max))
 
 def main_to_plot():
     data_graph_d100 = np.genfromtxt('methods_comparaison_d100.csv')
@@ -275,7 +295,7 @@ def main_to_plot():
     loss_graph_d100 = data_graph_d100[3:6]
     graph_labels_d100 = ['GD d100', 'SGD d100', 'p-SGD d100']
 
-    data_graph = np.genfromtxt('methods_comparaison.csv')
+    data_graph = np.genfromtxt('methods_comparaison_d200.csv')
     m_graph = data_graph[0:3]
     loss_graph = data_graph[3:6]
     graph_labels = ['GD', 'SGD', 'p-SGD']
@@ -287,4 +307,4 @@ def main_to_plot():
 
 if __name__ == "__main__":
     #main_comparaison_methods()
-    main_to_plot()
+    main_plot_comparaison()
