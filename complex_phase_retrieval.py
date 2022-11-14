@@ -75,7 +75,7 @@ def cost_der_1(h,h_0):
     """
     The derivative of the cost function "mu" in its first argument, h
     """
-    return (np.abs(h)**2-np.abs(h_0)**2)*h
+    return (np.abs(h)**2-np.abs(h_0)**2)*h.conj()
 
 def isinbatch(b,n):
     """
@@ -112,8 +112,8 @@ def loss_grad(w,X,y,s_last,b):
     """
     ret = np.empty(len(w),dtype=np.complex_)
     for k in range(len(w)):
-        ret[k] = s_last.T@(cost_der_1(X@w/np.sqrt(len(w)),y)*X[:,k].conj())/np.sqrt(len(w))/len(y)/b
-    return ret
+        ret[k] = s_last.T@(cost_der_1(X@w/np.sqrt(len(w)),y)*X[:,k])/np.sqrt(len(w))/len(y)/b
+    return ret.conj()
 
 def magnetization_norm(w,w_hat):
     return np.abs(w.conj().T@w_hat/len(w_hat))
@@ -217,26 +217,27 @@ def plot_descent_methods(m_norm, loss, labels, iter_max): #the m_norm and loss m
 
 def main_simple():
 
-    N = 300
-    d = 100
+    N = 30
+    d = 10
     eta = 0.5 # eta must be smaller than tau
     b = 0.5
     tau = 1 # b must be bigger than eta/(tau+eta)
     m_0 = 0.2
-    iter_max = 1e3
-    isComplex = False
+    iter_max = 1e4
+    isComplex = True
     np_rd_seed = None # for the results to be reproductible
 
 
     m_norm_all, loss_all = loop(N, d, eta, tau, b, m_0, iter_max, isComplex, np_rd_seed)
 
-    data_graph = np.concatenate((m_norm_all,loss_all))
-    np.savetxt("descent.csv", data_graph, fmt="%.6f")
+    if False: #put it to True to save results
+        data_graph = np.concatenate((m_norm_all,loss_all))
+        np.savetxt("descent.csv", data_graph, fmt="%.6f")
 
-    data_graph_ = np.genfromtxt('descent.csv')
-    m_norm_all_ = data_graph[0:1]
-    loss_all_ = data_graph[1:2]
-    iter_max_ = len(m_norm_all)
+        data_graph_ = np.genfromtxt('descent.csv')
+        m_norm_all_ = data_graph[0:1]
+        loss_all_ = data_graph[1:2]
+        iter_max_ = len(m_norm_all)
 
     plot_magLoss_iter(m_norm_all, loss_all, iter_max)
 
@@ -307,4 +308,4 @@ def main_to_plot():
 
 if __name__ == "__main__":
     #main_comparaison_methods()
-    main_plot_comparaison()
+    main_simple()
