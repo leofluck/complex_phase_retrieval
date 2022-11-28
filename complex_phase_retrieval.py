@@ -242,13 +242,13 @@ def main_simple():
     plot_magLoss_iter(m_norm_all, loss_all, iter_max)
 
 def main_comparaison_methods():
-    N = 300
-    d = 100
+    N = 3000
+    d = 1000
     eta = 0.01 # eta must be smaller than tau
     b = np.array([1., 0.5, 0.5])
     tau = np.array([1., eta/0.5, 1.]) # b must be bigger than eta/(tau+eta)
     m_0 = 0.2
-    iter_max = 1e4
+    iter_max = 1e6
     isComplex = True
     #np_rd_seed = np.arange(0,1,1) # for the results to be reproductible, the length of this object is the number of runs which get averaged
     np_rd_seed = np.random.randint(0,1000,5)
@@ -307,5 +307,5 @@ def main_to_plot():
 
 
 if __name__ == "__main__":
-    #main_comparaison_methods()
-    main_simple()
+    main_comparaison_methods()
+    #main_simple()
