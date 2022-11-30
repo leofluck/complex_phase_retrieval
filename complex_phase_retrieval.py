@@ -183,6 +183,7 @@ def loop(N=100, d=30, eta=1, tau=10, b=0.1, m_0=0.2, iter_max=1e3, isComplex=Tru
 
     return m_norm_all, loss_all
 
+
 def plot_magLoss_iter(m_norm_all,loss_all,iter_max):
 
     plt.subplot(1,2,1)
