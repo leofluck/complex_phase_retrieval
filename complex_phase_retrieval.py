@@ -243,16 +243,16 @@ def main_simple():
     plot_magLoss_iter(m_norm_all, loss_all, iter_max)
 
 def main_comparaison_methods():
-    N = 3000
-    d = 1000
+    N = 1500
+    d = 500
     eta = 0.01 # eta must be smaller than tau
     b = np.array([1., 0.5, 0.5])
     tau = np.array([1., eta/0.5, 1.]) # b must be bigger than eta/(tau+eta)
     m_0 = 0.2
-    iter_max = 1e6
+    iter_max = 1e4
     isComplex = True
     #np_rd_seed = np.arange(0,1,1) # for the results to be reproductible, the length of this object is the number of runs which get averaged
-    np_rd_seed = np.random.randint(0,1000,5)
+    np_rd_seed = np.random.randint(0,1000,50)
 
     graph_labels = ['GD','SGD','p-SGD']
 
@@ -268,7 +268,7 @@ def main_comparaison_methods():
 
     data_graph = np.concatenate((m_graph,loss_graph))
 
-    np.savetxt("methods_comparaison.csv", data_graph, fmt="%.6f")
+    np.savetxt("methods_comparaison_test.csv", data_graph, fmt="%.6f")
 
     #data_graph = np.genfromtxt('methods_comparaison.csv')
     #m_graph = data_graph[0:3]
@@ -281,7 +281,7 @@ def main_comparaison_methods():
 
     #plot_descent_methods(np.concatenate((m_graph,m_graph_d100)), np.concatenate((loss_graph,loss_graph_d100)), graph_labels+graph_labels_d100, int(iter_max))
 
-    plot_descent_methods(m_graph, loss_graph, graph_labels, int(iter_max))
+    #plot_descent_methods(m_graph, loss_graph, graph_labels, int(iter_max))
 
 def main_plot_comparaison():
     data_graph = np.genfromtxt('methods_comparaison.csv')
@@ -309,4 +309,5 @@ def main_to_plot():
 
 if __name__ == "__main__":
     main_comparaison_methods()
+    #main_plot_comparaison()
     #main_simple()
