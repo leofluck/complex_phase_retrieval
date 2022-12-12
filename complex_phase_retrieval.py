@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from tqdm import tqdm
+#from tqdm import tqdm
 #import random
 
 def random_complex_vector(length=1, distribution='gaussian', param=1/np.sqrt(2)):
@@ -174,7 +174,7 @@ def loop(N=100, d=30, eta=1, tau=10, b=0.1, m_0=0.2, iter_max=1e3, isComplex=Tru
     iter_max = int(iter_max)
     
     s_vector = isinbatch(b,N) #to "initialize" s, actually havine s for t=0
-    for iter in tqdm(range(iter_max)): #iteration is t
+    for iter in range(iter_max): #iteration is t
 
         m_norm_all[iter] = magnetization_norm(w,w_hat)
         loss_all[iter] = loss(w,X,y,s_vector,b)
@@ -262,7 +262,7 @@ def main_comparaison_methods():
 
     for descent_type in range(3): # for each descent type, 500 different loops are taken over the narray np_rd_seed
         m_to_average, loss_to_average = np.empty((len(np_rd_seed),int(iter_max))), np.empty((len(np_rd_seed),int(iter_max)))
-        for sample in tqdm(range(len(np_rd_seed))):
+        for sample in range(len(np_rd_seed)):
             m_to_average[sample], loss_to_average[sample] = loop(N, d, eta, tau[descent_type], b[descent_type], m_0, iter_max, isComplex, np_rd_seed[sample])
         m_graph[descent_type], loss_graph[descent_type] = np.mean(m_to_average,axis=0), np.mean(loss_to_average,axis=0)
 

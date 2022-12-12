@@ -1,0 +1,19 @@
+Lmod has detected the following error: You can only have one compiler module
+loaded at a time.
+You already have gcc loaded.
+To correct the situation, please execute the following command:
+
+  $ module swap gcc intel/19.0.5
+
+Please submit a consulting ticket if you require additional assistance.
+
+While processing the following module(s):
+    Module fullname  Module Filename
+    ---------------  ---------------
+    intel/19.0.5     /ssoft/spack/fidis_stable/share/spack/lmod/fidis/linux-rhel7-x86_64/Core/intel/19.0.5.lua
+
+Matplotlib is building the font cache; this may take a moment.
+Traceback (most recent call last):
+  File "complex_phase_retrieval.py", line 3, in <module>
+    from tqdm import tqdm
+ModuleNotFoundError: No module named 'tqdm'
