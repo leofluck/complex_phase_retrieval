@@ -175,7 +175,6 @@ def loop(N=100, d=30, eta=1, tau=10, b=0.1, m_0=0.2, iter_max=1e3, isComplex=Tru
     
     s_vector = isinbatch(b,N) #to "initialize" s, actually havine s for t=0
     for iter in range(iter_max): #iteration is t
-
         m_norm_all[iter] = magnetization_norm(w,w_hat)
         loss_all[iter] = loss(w,X,y,s_vector,b)
         w = w_next(w,X,y,b,eta,s_vector)
@@ -218,13 +217,13 @@ def plot_descent_methods(m_norm, loss, labels, iter_max): #the m_norm and loss m
 
 def main_simple():
 
-    N = 30
-    d = 10
+    N = 300
+    d = 100
     eta = 0.5 # eta must be smaller than tau
     b = 0.5
     tau = 1 # b must be bigger than eta/(tau+eta)
     m_0 = 0.2
-    iter_max = 1e4
+    iter_max = 1e3
     isComplex = True
     np_rd_seed = None # for the results to be reproductible
 
@@ -243,16 +242,16 @@ def main_simple():
     plot_magLoss_iter(m_norm_all, loss_all, iter_max)
 
 def main_comparaison_methods():
-    N = 1500
-    d = 500
+    N = 600
+    d = 200
     eta = 0.01 # eta must be smaller than tau
     b = np.array([1., 0.5, 0.5])
     tau = np.array([1., eta/0.5, 1.]) # b must be bigger than eta/(tau+eta)
     m_0 = 0.2
-    iter_max = 1e4
+    iter_max = 1e5
     isComplex = True
     #np_rd_seed = np.arange(0,1,1) # for the results to be reproductible, the length of this object is the number of runs which get averaged
-    np_rd_seed = np.random.randint(0,1000,50)
+    np_rd_seed = np.random.randint(0,1000,3)
 
     graph_labels = ['GD','SGD','p-SGD']
 
@@ -262,13 +261,15 @@ def main_comparaison_methods():
 
     for descent_type in range(3): # for each descent type, 500 different loops are taken over the narray np_rd_seed
         m_to_average, loss_to_average = np.empty((len(np_rd_seed),int(iter_max))), np.empty((len(np_rd_seed),int(iter_max)))
+        print(f'Beginning method {descent_type} --------------')
         for sample in range(len(np_rd_seed)):
+            print(f'Beginning the {sample}th sample --------------')
             m_to_average[sample], loss_to_average[sample] = loop(N, d, eta, tau[descent_type], b[descent_type], m_0, iter_max, isComplex, np_rd_seed[sample])
         m_graph[descent_type], loss_graph[descent_type] = np.mean(m_to_average,axis=0), np.mean(loss_to_average,axis=0)
 
     data_graph = np.concatenate((m_graph,loss_graph))
 
-    np.savetxt("methods_comparaison_test.csv", data_graph, fmt="%.6f")
+    np.savetxt(f"methods_comparaison_iter_1e5_complex_{isComplex}_d{d}.csv", data_graph, fmt="%.6f")
 
     #data_graph = np.genfromtxt('methods_comparaison.csv')
     #m_graph = data_graph[0:3]
@@ -284,7 +285,7 @@ def main_comparaison_methods():
     #plot_descent_methods(m_graph, loss_graph, graph_labels, int(iter_max))
 
 def main_plot_comparaison():
-    data_graph = np.genfromtxt('methods_comparaison.csv')
+    data_graph = np.genfromtxt('methods_comparaison_iter_100000.0_complex_True.csv')
     m_graph = data_graph[0:3]
     loss_graph = data_graph[3:6]
     iter_max = len(m_graph[0])

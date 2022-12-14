@@ -4,12 +4,12 @@
 #SBATCH --ntasks 1
 #SBATCH --cpus-per-task 1
 #SBATCH --mem 4096
-#SBATCH --time 04:00:00
+#SBATCH --time 24:00:00
 #SBATCH --partition serial
-#SBATCH -o testres_SGD.out
-#SBATCH -e error_SGD.out
+#SBATCH -o output_SGD_big.out
+#SBATCH -e error_SGD_big.out
 
-module load intel
+module load gcc
 module load python
 source SPOC/bin/activate
 
