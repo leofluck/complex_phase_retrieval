@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-#from tqdm import tqdm
+from tqdm import tqdm
 #import random
 
 def random_complex_vector(length=1, distribution='gaussian', param=1/np.sqrt(2)):
@@ -168,7 +168,7 @@ def loop(N=100, d=30, eta=1, tau=10, b=0.1, m_0=0.2, iter_max=1e3, isComplex=Tru
     iter_max = int(iter_max)
     
     s_vector = isinbatch(b,N) #to "initialize" s, actually havine s for t=0
-    for iter in range(iter_max): #iteration is t
+    for iter in tqdm(range(iter_max)): #iteration is t
         m_norm_all[iter] = magnetization_norm(w,w_hat)
         loss_all[iter] = loss(w,X,y,s_vector,b)
         w = w_next(w,X,y,b,eta,s_vector)
@@ -240,14 +240,14 @@ def main_simple():
 def main_comparaison_methods():
     N = 3000
     d = 1000
-    eta = 0.01 # eta must be smaller than tau
+    eta = 0.1 # eta must be smaller than tau
     b = np.array([1., 0.5, 0.5])
     tau = np.array([1., eta/0.5, 1.]) # b must be bigger than eta/(tau+eta)
     m_0 = 0.2
-    iter_max = 1e5
+    iter_max = 1e3
     isComplex = True
     #np_rd_seed = np.arange(0,1,1) # for the results to be reproductible, the length of this object is the number of runs which get averaged
-    np_rd_seed = np.random.randint(0,1000,3)
+    np_rd_seed = np.random.randint(0,1000,1)
 
     graph_labels = ['GD','SGD','p-SGD']
 
@@ -265,7 +265,7 @@ def main_comparaison_methods():
 
     data_graph = np.concatenate((m_graph,loss_graph))
 
-    np.savetxt(f"methods_comparaison_iter_1e5_complex_{isComplex}_d{d}.csv", data_graph, fmt="%.6f")
+    np.savetxt(f"methods_comparaison_iter_1e6_complex_{isComplex}_d{d}_eta001.csv", data_graph, fmt="%.6f")
 
     #data_graph = np.genfromtxt('methods_comparaison.csv')
     #m_graph = data_graph[0:3]
@@ -281,7 +281,7 @@ def main_comparaison_methods():
     #plot_descent_methods(m_graph, loss_graph, graph_labels, int(iter_max))
 
 def main_plot_comparaison():
-    data_graph = np.genfromtxt('methods_comparaison_iter_100000.0_complex_True.csv')
+    data_graph = np.genfromtxt('methods_comparaison_iter_1e3_complex_True_d1000_eta01.csv')
     m_graph = data_graph[0:3]
     loss_graph = data_graph[3:6]
     iter_max = len(m_graph[0])
@@ -305,6 +305,6 @@ def main_to_plot():
 
 
 if __name__ == "__main__":
-    main_comparaison_methods()
-    #main_plot_comparaison()
+    #main_comparaison_methods()
+    main_plot_comparaison()
     #main_simple()

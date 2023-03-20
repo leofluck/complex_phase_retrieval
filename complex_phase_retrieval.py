@@ -285,7 +285,7 @@ def main_comparaison_methods():
     #plot_descent_methods(m_graph, loss_graph, graph_labels, int(iter_max))
 
 def main_plot_comparaison():
-    data_graph = np.genfromtxt('methods_comparaison_iter_100000.0_complex_True.csv')
+    data_graph = np.genfromtxt('methods_comparaison_iter_1e5_complex_True_d200.csv')
     m_graph = data_graph[0:3]
     loss_graph = data_graph[3:6]
     iter_max = len(m_graph[0])
@@ -309,6 +309,6 @@ def main_to_plot():
 
 
 if __name__ == "__main__":
-    main_comparaison_methods()
-    #main_plot_comparaison()
+    #main_comparaison_methods()
+    main_plot_comparaison()
     #main_simple()
