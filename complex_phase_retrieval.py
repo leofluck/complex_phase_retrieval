@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-#from tqdm import tqdm
+from tqdm import tqdm
 #import random
 
 def random_complex_vector(length=1, distribution='gaussian', param=1/np.sqrt(2)):
@@ -15,12 +15,11 @@ def random_complex_vector(length=1, distribution='gaussian', param=1/np.sqrt(2))
     Complex standard normal (gaussian) distribution has variance 1/2 over the real and over the imaginary part (total variance 1)
     The real one has 1
     """
-    assert distribution in ['gaussian','uniform','fixed_norm','real_gaussian','real_uniform'], \
-        f"Parameter distribution can not be {distribution}"
+    #assert distribution in ['gaussian','uniform','fixed_norm','real_gaussian','real_uniform'], \
+    #    f"Parameter distribution can not be {distribution}"
 
     if distribution=='gaussian':
-        return np.random.normal(loc=0,scale=param,size=length) + \
-            (0+1j)*np.random.normal(loc=0,scale=param,size=length)
+        return np.random.normal(loc=0,scale=param,size=length) + (0+1j)*np.random.normal(loc=0,scale=param,size=length)
     elif distribution=='fixed_norm':
         return param*np.exp(2*np.pi*(0+1j)*np.random.random(length))
     elif distribution=='uniform':
@@ -51,10 +50,7 @@ def define_X(n,d,law='gaussian',param=1/np.sqrt(2)):
     If law=='gaussian', its rows are complex standard normally distributed, meaning x+iy with x,y~N(0,1/2)
     If law=='real_gaussian', its rows are standard normally distributed, meaning x+iy with x~N(0,1), y=0
     """
-    mat = np.empty((n,d),dtype=np.complex_)
-    for i in range(n):
-        mat[i] = random_complex_vector(d,law,param)
-    return mat
+    return random_complex_vector(np.array([n,d]),law,param)
 
 def define_y(X,w_hat):
     """
@@ -82,38 +78,35 @@ def isinbatch(b,n):
     Gives a vector s_new with each element 1 with a probability b, or 0 otherwise.
     Vector of functions s^i(t)
     """
-    s_new = np.empty(n)
-    for i in range(n):
-        s_new[i] = np.random.choice([1,0],p=[b,1-b])
+    s_new = np.random.choice(a=[1,0],p=[b,1-b],size=n)
     return s_new
 
 def iterative_isinbatch(b,eta,tau,s_last):
     """
     The vector of functions s^i(t) when defined iteratively, takes its precedent state into account
     """
-    s_new = np.empty(len(s_last))
-    for i in range(len(s_last)):
-        prob_1 = eta/tau*(1-s_last[i]) + (1-(1/b-1)*eta/tau)*s_last[i]
-        prob_0 = 1-prob_1
-        #print(f'run {i} and s_last {s_last[i]}: Probabilities are {prob_1} for 1 and {prob_0} for 0')
-        s_new[i] = np.random.choice([1,0],p=[prob_1,prob_0])
-    return s_new
+
+    prob_1 = eta/tau*(1-s_last) + (1-(1/b-1)*eta/tau)*s_last
+
+    vec = np.random.random(len(s_last))
+    
+    return np.where(prob_1 > vec,1,0)
+
 
 def loss(w,X,y,s_last,b):
     """
     The loss function to be minimized, y^i can be taken in place of \hat{h}^.
     
     """
-    return np.sum(s_last/len(y)/b*cost(X@w/np.sqrt(len(w)),y))
+    return np.sum(s_last/b*cost(X@w/np.sqrt(len(w)),y))
 
 def loss_grad(w,X,y,s_last,b):
     """
     The gradient in w of the loss function
     """
-    ret = np.empty(len(w),dtype=np.complex_)
-    for k in range(len(w)):
-        ret[k] = s_last.T@(cost_der_1(X@w/np.sqrt(len(w)),y)*X[:,k])/np.sqrt(len(w))/len(y)/b
-    return ret.conj()
+
+    ret = s_last.T@np.multiply(X.T,cost_der_1(X@w/np.sqrt(len(w)),y)).T/np.sqrt(len(w))/b
+    return (ret.T).conj()
 
 def magnetization_norm(w,w_hat):
     return np.abs(w.conj().T@w_hat/len(w_hat))
@@ -127,11 +120,11 @@ def define_w_0(m_0, w_hat, complex=True):
         z = random_complex_vector(len(w_hat))
     else:
         z = random_complex_vector(len(w_hat),'real_gaussian',1)
-    coeff = (-2*m_0*np.real(w_hat.T@np.conj(z)) + np.sqrt((2*m_0*np.real(w_hat.T@np.conj(z)))**2-z.T@np.conj(z)*len(w_hat)*(m_0**2-1)))/np.linalg.norm(z)**2
+    coeff = (-m_0*np.real(w_hat.T@np.conj(z)) - np.sqrt((m_0*np.real(w_hat.T@np.conj(z)))**2-z.T@np.conj(z)*(m_0**2*w_hat.T@w_hat.conj()-len(w_hat))))/np.linalg.norm(z)**2
     vec = m_0*w_hat+coeff*z
     return vec/np.linalg.norm(vec)*np.sqrt(len(w_hat))
 
-def w_next(w,X,y,b,eta,s_last):
+def w_next(w,X,y,b,eta,tau,s_last):
     """
     The recursive algorithm that links all together
     """
@@ -162,10 +155,12 @@ def initialize(N, d, eta, tau, b, m_0, iter_max, isComplex):
     s_vector = np.empty(N)
     w = define_w_0(m_0,w_hat,complex=isComplex)
 
+    #print(magnetization_norm(w,w_hat))
+
     return X, w_hat, y, m_norm_all, loss_all, s_vector, w
 
 def loop(N=100, d=30, eta=1, tau=10, b=0.1, m_0=0.2, iter_max=1e3, isComplex=True, np_rd_seed=None):
-
+    
     np.random.seed(np_rd_seed)
     #random.seed(0) if actively using random
 
@@ -174,10 +169,11 @@ def loop(N=100, d=30, eta=1, tau=10, b=0.1, m_0=0.2, iter_max=1e3, isComplex=Tru
     iter_max = int(iter_max)
     
     s_vector = isinbatch(b,N) #to "initialize" s, actually havine s for t=0
-    for iter in range(iter_max): #iteration is t
+    for iter in tqdm(range(iter_max)): #iteration is t
+
         m_norm_all[iter] = magnetization_norm(w,w_hat)
         loss_all[iter] = loss(w,X,y,s_vector,b)
-        w = w_next(w,X,y,b,eta,s_vector)
+        w = w_next(w,X,y,b,eta,tau,s_vector) #'useless' on the last run but allows t=0 to be on graph
         s_vector = iterative_isinbatch(b,eta,tau,s_vector) #"useless" on the last run but this way allows the prior isinbatch to be called for t=0
 
     return m_norm_all, loss_all
@@ -192,7 +188,7 @@ def plot_magLoss_iter(m_norm_all,loss_all,iter_max):
     plt.xscale('log')
     plt.subplot(1,2,2)
     plt.plot(np.arange(0,iter_max,1),loss_all)
-    plt.xlabel('t')
+    plt.xlabel('t$/\eta$')
     plt.ylabel('$\mathcal{L}(t)$')
     plt.xscale('log')
     plt.yscale('log')
@@ -201,14 +197,14 @@ def plot_magLoss_iter(m_norm_all,loss_all,iter_max):
 def plot_descent_methods(m_norm, loss, labels, iter_max): #the m_norm and loss must be narrays of dim (diff_graphs, values)
 
     plt.subplot(1,2,1)
-    plt.plot(np.arange(0,iter_max,1).T,m_norm.T,)
+    plt.plot(np.arange(1,iter_max+1,1).T,m_norm.T,)
     plt.xlabel('t/$\eta$')
     plt.ylabel('|m|(t)')
     plt.xscale('log')
     plt.legend(labels)
     plt.subplot(1,2,2)
-    plt.plot(np.arange(0,iter_max,1).T,loss.T)
-    plt.xlabel('t')
+    plt.plot(np.arange(1,iter_max+1,1).T,loss.T)
+    plt.xlabel('t/$\eta$')
     plt.ylabel('$\mathcal{L}(t)$')
     plt.xscale('log')
     plt.yscale('log')
@@ -307,8 +303,50 @@ def main_to_plot():
 
     plot_descent_methods(np.concatenate((m_graph,m_graph_d100)), np.concatenate((loss_graph,loss_graph_d100)), graph_labels+graph_labels_d100, int(iter_max))
 
+def main_final():
+    N = 3000
+    d = 1000
+    eta = 0.01 # eta must be smaller than tau
+    b = np.array([1., 0.5, 0.5])
+    tau = np.array([1., eta/0.5, 1.]) # b must be bigger than eta/(tau+eta)
+    m_0 = 0.2
+    iter_max = 5e4
+    isComplex = True
+    #np_rd_seed = np.arange(0,1,1) # for the results to be reproductible, the length of this object is the number of runs which get averaged
+    #np_rd_seed = np.random.randint(0,1000,3)
+    nb_runs = 1
+
+    graph_labels = ['GD','SGD','p-SGD']
+
+    m_graph, loss_graph = np.empty((3,int(iter_max))), np.empty((3,int(iter_max)))
+
+    for descent_type in range(3): # for each descent type, 500 different loops are taken over the narray np_rd_seed
+        m_to_average, loss_to_average = np.empty((nb_runs,int(iter_max))), np.empty((nb_runs,int(iter_max)))
+        for sample in range(nb_runs):
+            m_to_average[sample], loss_to_average[sample] = loop(N, d, eta, tau[descent_type], b[descent_type], m_0, iter_max, isComplex)
+        m_graph[descent_type], loss_graph[descent_type] = np.mean(m_to_average,axis=0), np.mean(loss_to_average,axis=0)
+
+    data_graph = np.concatenate((m_graph,loss_graph))
+
+    np.savetxt(f"data_complex_{isComplex}_iter_{int(iter_max)}_d_{d}_average_{nb_runs}.csv", data_graph, fmt="%.6f")
+
+
+def main_plot_final():
+    data_graph = np.genfromtxt('data_complex_True_iter_50000_d_1000_average_1.csv')
+    m_graph = data_graph[0:3]
+    loss_graph = data_graph[3:6]
+    iter_max = len(m_graph[0])
+    graph_labels = ['GD','SGD','p-SGD']
+    plot_descent_methods(m_graph, loss_graph, graph_labels, int(iter_max))
 
 if __name__ == "__main__":
     #main_comparaison_methods()
-    main_plot_comparaison()
+    #main_plot_comparaison()
     #main_simple()
+
+    run = False #run ou plot
+
+    if run:
+        main_final()
+    else:
+        main_plot_final()
