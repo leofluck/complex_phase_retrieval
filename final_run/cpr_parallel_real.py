@@ -244,7 +244,7 @@ def main_plot_concatenate(runs,steps):
     mag_all = np.empty((3,runs,int(steps)))
     loss_all = np.empty((3,runs,int(steps)))
     for i in range(runs):
-        data = np.genfromtxt(f'parallel_results/run_{i}.csv')
+        data = np.genfromtxt(f'parallel_real/run_{i}.csv')
         mag_all[:,i,:] = data[0:3]
         loss_all[:,i,:] = data[3:6]
 
@@ -262,9 +262,9 @@ def main_plot_final():
 
 if __name__ == "__main__":
 
-    run = True #run ou plot
+    run = False #run ou plot
 
     if run:
         main_final()
     else:
-        main_plot_concatenate(5,10)
+        main_plot_concatenate(500,100000)
