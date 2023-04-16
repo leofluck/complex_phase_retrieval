@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from sys import argv
 #from tqdm import tqdm
 #import random
 
@@ -211,98 +212,6 @@ def plot_descent_methods(m_norm, loss, labels, iter_max): #the m_norm and loss m
     plt.legend(labels)
     plt.show()
 
-def main_simple():
-
-    N = 300
-    d = 100
-    eta = 0.5 # eta must be smaller than tau
-    b = 0.5
-    tau = 1 # b must be bigger than eta/(tau+eta)
-    m_0 = 0.2
-    iter_max = 1e3
-    isComplex = True
-    np_rd_seed = None # for the results to be reproductible
-
-
-    m_norm_all, loss_all = loop(N, d, eta, tau, b, m_0, iter_max, isComplex, np_rd_seed)
-
-    if False: #put it to True to save results
-        data_graph = np.concatenate((m_norm_all,loss_all))
-        np.savetxt("descent.csv", data_graph, fmt="%.6f")
-
-        data_graph_ = np.genfromtxt('descent.csv')
-        m_norm_all_ = data_graph[0:1]
-        loss_all_ = data_graph[1:2]
-        iter_max_ = len(m_norm_all)
-
-    plot_magLoss_iter(m_norm_all, loss_all, iter_max)
-
-def main_comparaison_methods():
-    N = 600
-    d = 200
-    eta = 0.01 # eta must be smaller than tau
-    b = np.array([1., 0.5, 0.5])
-    tau = np.array([1., eta/0.5, 1.]) # b must be bigger than eta/(tau+eta)
-    m_0 = 0.2
-    iter_max = 1e5
-    isComplex = True
-    #np_rd_seed = np.arange(0,1,1) # for the results to be reproductible, the length of this object is the number of runs which get averaged
-    np_rd_seed = np.random.randint(0,1000,3)
-
-    graph_labels = ['GD','SGD','p-SGD']
-
-    m_graph, loss_graph = np.empty((3,int(iter_max))), np.empty((3,int(iter_max)))
-
-    print(f'N = {N}\nd = {d}\neta = {eta}\nb = {b}\ntau = {tau}\nm_0 = {m_0}\niter_max = {iter_max}\nisComplex = {isComplex}\nnb_samples_averaged = {len(np_rd_seed)}')
-
-    for descent_type in range(3): # for each descent type, 500 different loops are taken over the narray np_rd_seed
-        m_to_average, loss_to_average = np.empty((len(np_rd_seed),int(iter_max))), np.empty((len(np_rd_seed),int(iter_max)))
-        print(f'Beginning method {descent_type} --------------')
-        for sample in range(len(np_rd_seed)):
-            print(f'Beginning the {sample}th sample --------------')
-            m_to_average[sample], loss_to_average[sample] = loop(N, d, eta, tau[descent_type], b[descent_type], m_0, iter_max, isComplex, np_rd_seed[sample])
-        m_graph[descent_type], loss_graph[descent_type] = np.mean(m_to_average,axis=0), np.mean(loss_to_average,axis=0)
-
-    data_graph = np.concatenate((m_graph,loss_graph))
-
-    np.savetxt(f"methods_comparaison_iter_1e5_complex_{isComplex}_d{d}.csv", data_graph, fmt="%.6f")
-
-    #data_graph = np.genfromtxt('methods_comparaison.csv')
-    #m_graph = data_graph[0:3]
-    #loss_graph = data_graph[3:6]
-
-    #data_graph_d100 = np.genfromtxt('methods_comparaison_d100.csv')
-    #m_graph_d100 = data_graph_d100[0:3]
-    #loss_graph_d100 = data_graph_d100[3:6]
-    #graph_labels_d100 = ['GD d100', 'SGD d100', 'p-SGD d100']
-
-    #plot_descent_methods(np.concatenate((m_graph,m_graph_d100)), np.concatenate((loss_graph,loss_graph_d100)), graph_labels+graph_labels_d100, int(iter_max))
-
-    #plot_descent_methods(m_graph, loss_graph, graph_labels, int(iter_max))
-
-def main_plot_comparaison():
-    data_graph = np.genfromtxt('methods_comparaison_iter_1e5_complex_True_d200.csv')
-    m_graph = data_graph[0:3]
-    loss_graph = data_graph[3:6]
-    iter_max = len(m_graph[0])
-    graph_labels = ['GD','SGD','p-SGD']
-    plot_descent_methods(m_graph, loss_graph, graph_labels, int(iter_max))
-
-def main_to_plot():
-    data_graph_d100 = np.genfromtxt('methods_comparaison_d100.csv')
-    m_graph_d100 = data_graph_d100[0:3]
-    loss_graph_d100 = data_graph_d100[3:6]
-    graph_labels_d100 = ['GD d100', 'SGD d100', 'p-SGD d100']
-
-    data_graph = np.genfromtxt('methods_comparaison_d200.csv')
-    m_graph = data_graph[0:3]
-    loss_graph = data_graph[3:6]
-    graph_labels = ['GD', 'SGD', 'p-SGD']
-    
-    iter_max = 1e3
-
-    plot_descent_methods(np.concatenate((m_graph,m_graph_d100)), np.concatenate((loss_graph,loss_graph_d100)), graph_labels+graph_labels_d100, int(iter_max))
-
 def main_final():
     N = 3000
     d = 1000
@@ -310,10 +219,11 @@ def main_final():
     b = np.array([1., 0.5, 0.5])
     tau = np.array([1., eta/0.5, 1.]) # b must be bigger than eta/(tau+eta)
     m_0 = 0.2
-    iter_max = 5e4
-    isComplex = True
+    iter_max = 1e5
+    isComplex = False
     #np_rd_seed = np.arange(0,1,1) # for the results to be reproductible, the length of this object is the number of runs which get averaged
     #np_rd_seed = np.random.randint(0,1000,3)
+    np.random.seed(int(argv[1]))
     nb_runs = 1
 
     graph_labels = ['GD','SGD','p-SGD']
@@ -328,11 +238,22 @@ def main_final():
 
     data_graph = np.concatenate((m_graph,loss_graph))
 
-    np.savetxt(f"data_complex_{isComplex}_iter_{int(iter_max)}_d_{d}_average_{nb_runs}.csv", data_graph, fmt="%.6f")
+    np.savetxt(f"parallel_real/run_{argv[1]}.csv", data_graph, fmt="%.6f")
 
+def main_plot_concatenate(runs,steps):
+    mag_all = np.empty((3,runs,int(steps)))
+    loss_all = np.empty((3,runs,int(steps)))
+    for i in range(runs):
+        data = np.genfromtxt(f'parallel_results/run_{i}.csv')
+        mag_all[:,i,:] = data[0:3]
+        loss_all[:,i,:] = data[3:6]
+
+    graph_labels = ['GD','SGD','p-SGD']
+    plot_descent_methods(mag_all.mean(axis=1), loss_all.mean(axis=1), graph_labels, mag_all.shape[2])  
+    
 
 def main_plot_final():
-    data_graph = np.genfromtxt('data_complex_True_iter_50000_d_1000_average_1.csv')
+    data_graph = np.genfromtxt('.csv')
     m_graph = data_graph[0:3]
     loss_graph = data_graph[3:6]
     iter_max = len(m_graph[0])
@@ -340,13 +261,10 @@ def main_plot_final():
     plot_descent_methods(m_graph, loss_graph, graph_labels, int(iter_max))
 
 if __name__ == "__main__":
-    #main_comparaison_methods()
-    #main_plot_comparaison()
-    #main_simple()
 
-    run = False #run ou plot
+    run = True #run ou plot
 
     if run:
         main_final()
     else:
-        main_plot_final()
+        main_plot_concatenate(5,10)
