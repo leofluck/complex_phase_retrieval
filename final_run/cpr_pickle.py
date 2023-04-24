@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from sys import argv
 import pickle
 #from tqdm import tqdm
 #import random
