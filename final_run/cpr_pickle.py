@@ -1,6 +1,6 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from sys import argv
+import matplotlib.pyplot as 
+import pickle
 #from tqdm import tqdm
 #import random
 
@@ -210,7 +210,7 @@ def plot_descent_methods(m_norm, loss, labels, iter_max): #the m_norm and loss m
     plt.xscale('log')
     plt.yscale('log')
     plt.legend(labels)
-    plt.savefig('parallel_complex_long.png')
+    plt.show()
 
 def main_final():
     N = 3000
@@ -238,30 +238,32 @@ def main_final():
 
     data_graph = np.concatenate((m_graph,loss_graph))
 
-    np.savetxt(f"parallel_complex_long/run_{argv[1]}.csv", data_graph, fmt="%.6f")
+    data_file = open(f'parallel_pickle/data_run_{argv[1]}.pickle','wb')
+    pickle.dump(data_graph,data_file)
+    data_file.close()
 
-def main_plot_concatenate(runs,steps):
+def main_concatenate(runs,steps,saving): #if saving==True, saves the data in a pickle. else, unpickles it and graphs
     mag_all = np.empty((3,runs,int(steps)))
     loss_all = np.empty((3,runs,int(steps)))
-    unfound = []
     for i in range(runs):
-        try:
-            data = np.genfromtxt(f"parallel_complex_long/run_{i}.csv")
-        except:
-            unfound.append(i)
+        data_file = open(f'parallel_pickle/data_run_{i}.pickle','rb')
+        data = pickle.load(data_file)
         mag_all[:,i,:] = data[0:3]
         loss_all[:,i,:] = data[3:6]
-
-    mag_fin = np.empty((3,runs-len(unfound),int(steps)))
-    loss_fin = np.empty((3,runs-len(unfound),int(steps)))
-    counter = 0
-    for i in range(runs):
-        if i not in unfound:
-            mag_fin[:,counter,:] = np.copy(mag_all[:,i,:])
-            counter += 1
+        data_file.close()
 
     graph_labels = ['GD','SGD','p-SGD']
-    plot_descent_methods(mag_fin.mean(axis=1), loss_fin.mean(axis=1), graph_labels, mag_fin.shape[2])  
+
+    if saving:
+        data_file = open('data.pickle','wb')
+        pickle.dump(np.concatenate((mag_all,loss_all)),data_file)
+        data_file.close()
+
+    else:
+        data_file = open('data.pickle','rb')
+        data = pickle.load(data_file)
+        plot_descent_methods(data[0:3].mean(axis=1), data.mean(axis=1), graph_labels, mag_all.shape[2])
+        data_file.close()
     
 
 def main_plot_final():
@@ -274,9 +276,9 @@ def main_plot_final():
 
 if __name__ == "__main__":
 
-    run = False #run ou plot
+    run = True #run ou plot
 
     if run:
         main_final()
     else:
-        main_plot_concatenate(500,300000)
+        main_concatenate(500,300000,True)
