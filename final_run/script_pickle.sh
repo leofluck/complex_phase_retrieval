@@ -6,8 +6,8 @@
 #SBATCH --mem 4096
 #SBATCH --time 48:00:00
 #SBATCH --qos serial
-#SBATCH -o output_SGD_par.out
-#SBATCH -e error_SGD_par.out
+#SBATCH -o output_pickle.out
+#SBATCH -e error_pickle.out
 #SBATCH --array=0-499
 
 module load gcc
