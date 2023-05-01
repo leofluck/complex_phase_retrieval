@@ -2,7 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sys import argv
 import pickle
-#from tqdm import tqdm
+try:
+    from tqdm import tqdm
+except:
+    tqdm = lambda x: x
 #import random
 
 def random_complex_vector(length=1, distribution='gaussian', param=1/np.sqrt(2)):
@@ -134,7 +137,7 @@ def w_next(w,X,y,b,eta,tau,s_last):
     
     return cal/np.linalg.norm(cal)*np.sqrt(len(w))
 
-def initialize(N, d, eta, tau, b, m_0, iter_max, isComplex):
+def initialize(N, d, eta, tau, b, m_0, iter_max, isComplex, nb_samples): #sampling assumed logarithmically
 
     iter_max = int(iter_max)
 
@@ -152,8 +155,8 @@ def initialize(N, d, eta, tau, b, m_0, iter_max, isComplex):
     w_hat = define_w_hat(d,complex=isComplex)
     y = define_y(X,w_hat)
 
-    m_norm_all = np.empty(iter_max)
-    loss_all = np.empty(iter_max)
+    m_norm_all = np.empty(nb_samples)
+    loss_all = np.empty(nb_samples)
     s_vector = np.empty(N)
     w = define_w_0(m_0,w_hat,complex=isComplex)
 
@@ -161,20 +164,23 @@ def initialize(N, d, eta, tau, b, m_0, iter_max, isComplex):
 
     return X, w_hat, y, m_norm_all, loss_all, s_vector, w
 
-def loop(N=100, d=30, eta=1, tau=10, b=0.1, m_0=0.2, iter_max=1e3, isComplex=True, np_rd_seed=None):
+def loop(N=100, d=30, eta=1, tau=10, b=0.1, m_0=0.2, iter_max=1e3, isComplex=True, np_rd_seed=None, nb_actual_samples=1000): #sampling assumed logarithmially
     
     np.random.seed(np_rd_seed)
     #random.seed(0) if actively using random
 
-    X, w_hat, y, m_norm_all, loss_all, s_vector, w = initialize(N, d, eta, tau, b, m_0, iter_max, isComplex)
+    X, w_hat, y, m_norm_all, loss_all, s_vector, w = initialize(N, d, eta, tau, b, m_0, iter_max, isComplex, nb_actual_samples)
 
     iter_max = int(iter_max)
+
+    sampling = np.unique(np.round(np.logspace(0,np.log(iter_max-1)/np.log(10),nb_actual_samples)).astype(int))
     
     s_vector = isinbatch(b,N) #to "initialize" s, actually havine s for t=0
-    for iter in range(iter_max): #iteration is t
-
-        m_norm_all[iter] = magnetization_norm(w,w_hat)
-        loss_all[iter] = loss(w,X,y,s_vector,b)
+    for iter in tqdm(range(iter_max)): #iteration is t
+        if iter in sampling:
+            idx = np.where(sampling == iter)[0][0]
+            m_norm_all[idx] = magnetization_norm(w,w_hat)
+            loss_all[idx] = loss(w,X,y,s_vector,b)
         w = w_next(w,X,y,b,eta,tau,s_vector) #'useless' on the last run but allows t=0 to be on graph
         s_vector = iterative_isinbatch(b,eta,tau,s_vector) #"useless" on the last run but this way allows the prior isinbatch to be called for t=0
 
@@ -196,22 +202,22 @@ def plot_magLoss_iter(m_norm_all,loss_all,iter_max):
     plt.yscale('log')
     plt.show()
 
-def plot_descent_methods(m_norm, loss, labels, iter_max): #the m_norm and loss must be narrays of dim (diff_graphs, values)
+def plot_descent_methods(sampling, m_norm, loss, labels): #the m_norm and loss must be narrays of dim (diff_graphs, values)
 
     plt.subplot(1,2,1)
-    plt.plot(np.arange(1,iter_max+1,1).T,m_norm.T,)
+    plt.plot(sampling,m_norm.T,)
     plt.xlabel('t/$\eta$')
     plt.ylabel('|m|(t)')
     plt.xscale('log')
     plt.legend(labels)
     plt.subplot(1,2,2)
-    plt.plot(np.arange(1,iter_max+1,1).T,loss.T)
+    plt.plot(sampling,loss.T)
     plt.xlabel('t/$\eta$')
     plt.ylabel('$\mathcal{L}(t)$')
     plt.xscale('log')
     plt.yscale('log')
     plt.legend(labels)
-    plt.savefig('result_pickle.png')
+    plt.savefig('result_sampled.png')
 
 def main_final():
     N = 3000
@@ -220,7 +226,7 @@ def main_final():
     b = np.array([1., 0.5, 0.5])
     tau = np.array([1., eta/0.5, 1.]) # b must be bigger than eta/(tau+eta)
     m_0 = 0.2
-    iter_max = 3e5
+    iter_max = 5e1
     isComplex = True
     #np_rd_seed = np.arange(0,1,1) # for the results to be reproductible, the length of this object is the number of runs which get averaged
     #np_rd_seed = np.random.randint(0,1000,3)
@@ -229,56 +235,60 @@ def main_final():
 
     graph_labels = ['GD','SGD','p-SGD']
 
-    m_graph, loss_graph = np.empty((3,int(iter_max))), np.empty((3,int(iter_max)))
+    nb_samples = 10
+
+    sampling = np.unique(np.round(np.logspace(0,np.log(iter_max)/np.log(10),nb_samples)).astype(int))
+
+    m_graph, loss_graph = np.empty((3,len(sampling))), np.empty((3,len(sampling)))
 
     for descent_type in range(3): # for each descent type, 500 different loops are taken over the narray np_rd_seed
-        m_to_average, loss_to_average = np.empty((nb_runs,int(iter_max))), np.empty((nb_runs,int(iter_max)))
-        for sample in range(nb_runs):
-            m_to_average[sample], loss_to_average[sample] = loop(N, d, eta, tau[descent_type], b[descent_type], m_0, iter_max, isComplex)
-        m_graph[descent_type], loss_graph[descent_type] = np.mean(m_to_average,axis=0), np.mean(loss_to_average,axis=0)
+        #m_to_average, loss_to_average = np.empty((nb_runs,int(iter_max))), np.empty((nb_runs,int(iter_max)))
+        #for sample in range(nb_runs):
+            #m_to_average[sample], loss_to_average[sample] = loop(N, d, eta, tau[descent_type], b[descent_type], m_0, iter_max, isComplex)
+        m_graph[descent_type], loss_graph[descent_type] = loop(N, d, eta, tau[descent_type], b[descent_type], m_0, iter_max, isComplex, None, len(sampling))
 
-    data_graph = np.concatenate((m_graph,loss_graph))
+    data_graph = np.concatenate(([sampling],m_graph,loss_graph))
 
-    data_file = open(f'parallel_pickle/data_run_{argv[1]}.pickle','wb')
-    pickle.dump(data_graph,data_file)
-    data_file.close()
-
-def main_concatenate(runs,steps,plotting,saving): #if saving==True, saves the data in a pickle. else, unpickles it and graphs
-    mag_all = np.empty((3,runs,int(steps)))
-    loss_all = np.empty((3,runs,int(steps)))
-    for i in range(runs):
-        data_file = open(f'parallel_pickle/data_run_{i}.pickle','rb')
-        data = pickle.load(data_file)
-        mag_all[:,i,:] = data[0:3]
-        loss_all[:,i,:] = data[3:6]
+    try:
+        data_file = open(f'parallel_sample/data_run_{argv[1]}.pickle','wb')
+        pickle.dump(data_graph,data_file)
         data_file.close()
+    except:
+        np.savetxt(f"parallel_sample/data.csv", data_graph, fmt="%.6f")
 
+def main_concatenate(runs,raw,saving): #if raw, reads all the parallel data. Else, reads the already concatenated data and plots. If saving==True, saves the concatenated data in a pickle. else, graphs
+    
     graph_labels = ['GD','SGD','p-SGD']
 
-    if plotting:
-        plot_descent_methods(data[0:3].mean(axis=1), data[3:6].mean(axis=1), graph_labels, mag_all.shape[2])
+    if raw:
+        data_file = open('parallel_sample/data_run_0.pickle','rb') #assuming there always is a file
+        data = pickle.load(data_file)
+        samples = data[0]
+        data_file.close()
 
-    else:
+        mag_all = np.empty((3,runs,len(samples)))
+        loss_all = np.empty((3,runs,len(samples)))
+
+        for i in range(runs):
+            data_file = open(f'parallel_sample/data_run_{i}.pickle','rb')
+            data = pickle.load(data_file)
+            mag_all[:,i,:] = data[1:4]
+            loss_all[:,i,:] = data[4:7]
+            data_file.close()
 
         if saving:
             data_file = open('results.pickle','wb')
-            pickle.dump(np.concatenate((mag_all,loss_all)),data_file)
+            pickle.dump(np.concatenate((np.tile(samples,(1,runs,1)), mag_all, loss_all)),data_file)
             data_file.close()
-
         else:
-            data_file = open('results.pickle','rb')
-            data = pickle.load(data_file)
-            plot_descent_methods(data[0:3].mean(axis=1), data[3:6].mean(axis=1), graph_labels, mag_all.shape[2])
-            data_file.close()
-    
+            plot_descent_methods(samples, mag_all.mean(axis=1), loss_all.mean(axis=1), graph_labels)
 
-def main_plot_final():
-    data_graph = np.genfromtxt('.csv')
-    m_graph = data_graph[0:3]
-    loss_graph = data_graph[3:6]
-    iter_max = len(m_graph[0])
-    graph_labels = ['GD','SGD','p-SGD']
-    plot_descent_methods(m_graph, loss_graph, graph_labels, int(iter_max))
+    else:
+        data_file = open('results.pickle','rb')
+        data = pickle.load(data_file)
+        plot_descent_methods(data[0][0], data[1:4].mean(axis=1), data[4:7].mean(axis=1), graph_labels)
+        data_file.close()
+
 
 if __name__ == "__main__":
 
@@ -287,4 +297,4 @@ if __name__ == "__main__":
     if run:
         main_final()
     else:
-        main_concatenate(500,300000,plotting=True,saving=True)
+        main_concatenate(50,raw=False,saving=True)
