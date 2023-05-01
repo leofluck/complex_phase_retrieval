@@ -211,7 +211,7 @@ def plot_descent_methods(m_norm, loss, labels, iter_max): #the m_norm and loss m
     plt.xscale('log')
     plt.yscale('log')
     plt.legend(labels)
-    plt.show()
+    plt.savefig('result_pickle.png')
 
 def main_final():
     N = 3000
@@ -243,7 +243,7 @@ def main_final():
     pickle.dump(data_graph,data_file)
     data_file.close()
 
-def main_concatenate(runs,steps,saving): #if saving==True, saves the data in a pickle. else, unpickles it and graphs
+def main_concatenate(runs,steps,plotting,saving): #if saving==True, saves the data in a pickle. else, unpickles it and graphs
     mag_all = np.empty((3,runs,int(steps)))
     loss_all = np.empty((3,runs,int(steps)))
     for i in range(runs):
@@ -255,16 +255,21 @@ def main_concatenate(runs,steps,saving): #if saving==True, saves the data in a p
 
     graph_labels = ['GD','SGD','p-SGD']
 
-    if saving:
-        data_file = open('data.pickle','wb')
-        pickle.dump(np.concatenate((mag_all,loss_all)),data_file)
-        data_file.close()
+    if plotting:
+        plot_descent_methods(data[0:3].mean(axis=1), data[3:6].mean(axis=1), graph_labels, mag_all.shape[2])
 
     else:
-        data_file = open('data.pickle','rb')
-        data = pickle.load(data_file)
-        plot_descent_methods(data[0:3].mean(axis=1), data.mean(axis=1), graph_labels, mag_all.shape[2])
-        data_file.close()
+
+        if saving:
+            data_file = open('results.pickle','wb')
+            pickle.dump(np.concatenate((mag_all,loss_all)),data_file)
+            data_file.close()
+
+        else:
+            data_file = open('results.pickle','rb')
+            data = pickle.load(data_file)
+            plot_descent_methods(data[0:3].mean(axis=1), data[3:6].mean(axis=1), graph_labels, mag_all.shape[2])
+            data_file.close()
     
 
 def main_plot_final():
@@ -282,4 +287,4 @@ if __name__ == "__main__":
     if run:
         main_final()
     else:
-        main_concatenate(500,300000,True)
+        main_concatenate(500,300000,plotting=True,saving=True)
