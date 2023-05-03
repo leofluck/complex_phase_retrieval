@@ -226,7 +226,7 @@ def main_final():
     b = np.array([1., 0.5, 0.5])
     tau = np.array([1., eta/0.5, 1.]) # b must be bigger than eta/(tau+eta)
     m_0 = 0.2
-    iter_max = 5e1
+    iter_max = 3e5
     isComplex = True
     #np_rd_seed = np.arange(0,1,1) # for the results to be reproductible, the length of this object is the number of runs which get averaged
     #np_rd_seed = np.random.randint(0,1000,3)
@@ -235,7 +235,7 @@ def main_final():
 
     graph_labels = ['GD','SGD','p-SGD']
 
-    nb_samples = 10
+    nb_samples = 500
 
     sampling = np.unique(np.round(np.logspace(0,np.log(iter_max)/np.log(10),nb_samples)).astype(int))
 
@@ -297,4 +297,4 @@ if __name__ == "__main__":
     if run:
         main_final()
     else:
-        main_concatenate(50,raw=False,saving=True)
+        main_concatenate(500,raw=False,saving=True)
