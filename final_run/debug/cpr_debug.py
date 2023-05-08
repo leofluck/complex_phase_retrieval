@@ -205,8 +205,8 @@ def plot_descent_methods(sampling, m_norm, loss, labels): #the m_norm and loss m
     plt.savefig('result_sampled.png')
 
 def main_final():
-    N = 3000
-    d = 1000
+    N = 30
+    d = 10
     eta = 0.01 # eta must be smaller than tau
     b = np.array([1., 0.5, 0.5])
     tau = np.array([1., eta/0.5, 1.]) # b must be bigger than eta/(tau+eta)
@@ -214,7 +214,7 @@ def main_final():
     iter_max = 100
     isComplex = True
 
-    nb_samples = 1000
+    nb_samples = 10
 
     #np_rd_seed = np.arange(0,1,1) # for the results to be reproductible, the length of this object is the number of runs which get averaged
     #np_rd_seed = np.random.randint(0,1000,3)
@@ -269,11 +269,7 @@ def main_concatenate(runs,raw,saving): #if raw, reads all the parallel data. Els
 
         if saving:
             data_file = open('results.pickle','wb')
-            data = np.empty((7,runs,len(samples)))
-            data[0] = np.tile(samples,(runs,1))
-            data[1:4] = mag_all
-            data[4:7] = loss_all
-            pickle.dump(data,data_file)
+            pickle.dump(np.concatenate((np.tile(samples,(1,runs,1)), mag_all, loss_all)),data_file)
             data_file.close()
         
         plot_descent_methods(samples, mag_all.mean(axis=1), loss_all.mean(axis=1), graph_labels)
@@ -292,4 +288,4 @@ if __name__ == "__main__":
     if run:
         main_final()
     else:
-        main_concatenate(500,raw=True,saving=True)
+        main_concatenate(1,raw=True,saving=True)
