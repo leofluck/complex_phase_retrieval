@@ -172,9 +172,7 @@ def loop(N=100, d=30, eta=1, tau=10, b=0.1, m_0=0.2, iter_max=1e3, isComplex=Tru
     X, w_hat, y, m_norm_all, loss_all, s_vector, w = initialize(N, d, eta, tau, b, m_0, iter_max, isComplex, sampling)
 
     iter_max = int(iter_max)
-
-    sampling = np.unique(np.round(np.logspace(0,np.log(iter_max-1)/np.log(10),len(sampling))).astype(int))
-    
+   
     s_vector = isinbatch(b,N) #to "initialize" s, actually havine s for t=0
     for iter in tqdm(range(iter_max)): #iteration is t
         if iter in sampling:
