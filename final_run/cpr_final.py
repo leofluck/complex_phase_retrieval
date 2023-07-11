@@ -204,8 +204,8 @@ def plot_descent_methods(sampling, m_norm, loss, labels): #the m_norm and loss m
 
 
 def main_final():
-    N = 3000
-    d = 1000
+    N = 300
+    d = 100
     eta = 0.01 # eta must be smaller than tau
     b = np.array([1., 0.5, 0.5])
     tau = np.array([1., eta/0.5, 1.]) # b must be bigger than eta/(tau+eta)
@@ -293,4 +293,4 @@ if __name__ == "__main__":
     if run:
         main_final()
     else:
-        main_concatenate(500,raw=True,saving=True)
+        main_concatenate(10,raw=False,saving=True)

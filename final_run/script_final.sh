@@ -4,11 +4,11 @@
 #SBATCH --ntasks 1
 #SBATCH --cpus-per-task 1
 #SBATCH --mem 4096
-#SBATCH --time 48:00:00
+#SBATCH --time 00:10:00
 #SBATCH --qos serial
 #SBATCH -o output_final.out
 #SBATCH -e error_final.out
-#SBATCH --array=0-499
+#SBATCH --array=0-9
 
 module load gcc
 module load python
